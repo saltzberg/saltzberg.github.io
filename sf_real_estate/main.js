@@ -2,20 +2,9 @@
  * Created by bdilday on 2/11/16.
  */
 
-    var resting_opacity = 0.05;
-    var batted_ball_duration = 100;
-var feetPerPixel = 2;
-var nav_square_sz = 5;
-var nav_square_buffer = 0;
-
-var field_scale = d3.scale.linear()
-        .range([0, 127*feetPerPixel])
-        .domain([0, 127])
-    ;
-
 var margin = {top: 100, right: 10, bottom: 100, left: 300},
-    width = 1400 - margin.left - margin.right,
-    height = 1000 - margin.top - margin.bottom;
+    width = 1100 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
 
 var svg = d3.select("body").append("svg")
     .attr("width", width + margin.left + margin.right)
@@ -23,21 +12,19 @@ var svg = d3.select("body").append("svg")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+
 var x = d3.scale.linear()
     .range([0, width]);
 var y = d3.scale.linear()
     .range([height, 0])
     .domain([0,1]);
 
-var nav_width = 300;
-var nav_height = 300;
-
 var ynav = d3.scale.linear()
-    .rangeRound([nav_height, 0])
+    .rangeRound([height, 0])
 ;
 
 var ynavboxes = d3.scale.ordinal()
-        .rangeRoundBands([nav_height, 0])
+        .rangeRoundBands([height, 0])
     ;
 
 var xaxis = d3.svg.axis()
@@ -63,412 +50,188 @@ var line = d3.svg.line()
     })
     .interpolate(interpolate_type);
 
-// daytime,ExitSpeed,VExitAngle,HExitAngle,Carry,Bearing,HangTime,rho,hand,outcome,slg,LW,
-var number_of_bins = {'VExitAngle': 20, 'HangTime': 20, 'ExitSpeed': 20};
-
-var all_keys = [];
-
-_.forIn(number_of_bins, function(v, k) {
-    all_keys.push(k);
-});
-
-var hs = _.mapValues(number_of_bins, function(v, k) {
-    return d3.scale.linear()
-        .range([0, v+1])
-    ;
-});
-
-
-d3.csv("batted-balls-2009.csv", function(error, data) {
-
-    var angleToRadian = Math.PI/180.0;
-    console.log(angleToRadian);
-    _.forEach(data, function(d) {
-        d.HExitAngleInRadians = parseFloat(d.HExitAngle)*angleToRadian;
-        d.BearingInRadians = parseFloat(d.Bearing)*angleToRadian;
-        d.Carry = parseFloat(d.Carry);
-    });
+d3.json("pobguy_v2.json", function(error, data) {
     console.log(data);
 
-    var domains = {};
-    var arrs = {};
-    _.forIn(number_of_bins, function(v, k) {
-        arrs[k] = [];
-        _.forEach(data, function(d) {
-            arrs[k].push(parseFloat(d[k]));
-        });
-    });
-    console.log('arrs', arrs);
+    var lines = {}
+    var xd = [9999, -9999];
+    var yd = [9999, -9999];
 
+    var all_iys = _.uniq(
+        _.map(data, function(d) {
+            d.x = parseFloat(d.x);
+            d.y = parseFloat(d.y);
 
+            if (d.x > xd[1]) {
+                xd[1] = d.x;
+            }
+            if (d.x < xd[0]) {
+                xd[0] = d.x;
+            }
 
-    _.forIn(number_of_bins, function(v, k) {
-        domains[k] = d3.extent(arrs[k]);
-        hs[k].domain(domains[k]);
-    })
-    console.log('domains', domains);
+            if (d.y > yd[1]) {
+                yd[1] = d.y;
+            }
+            if (d.y < yd[0]) {
+                yd[0] = d.y;
+            }
 
-    var make_base = function(idx, g) {
-
-        var xlocs_feet = [127/2, 127, 127/2, 0];
-        var ylocs_feet = [127, 127/2, 0, 127/2];
-
-        console.log(xlocs_feet[idx], ylocs_feet[idx], field_scale(xlocs_feet[idx]), field_scale(ylocs_feet[idx]));
-
-        var base_sz = 8*feetPerPixel;
-        g.append('rect')
-            .attr('class', 'base')
-            .attr('id', 'base'+ idx.toString())
-            .attr('x', field_scale(xlocs_feet[idx]))
-            .attr('y', field_scale(ylocs_feet[idx]))
-            .attr('height', base_sz)
-            .attr('width', base_sz)
-            .attr('transform', function() {
-                var sx = (field_scale(xlocs_feet[idx]) + 0.5*base_sz).toString();
-                var sy = (field_scale(ylocs_feet[idx]) + 0.5*base_sz).toString();
-                return 'rotate(45 ' + sx + ' ' + sy + ')';
-            })
-        ;
-    };
-
-    var make_bases = function() {
-        var sx = 200;
-        var sy = 450;
-        var field = svg.append('g')
-            .attr('id', 'field')
-            .attr('transform', 'translate(' + sx + ',' + sy + ')')
-        ;
-        _.forEach([0, 1, 2, 3], function(idx) {
-            make_base(idx, field);
-        });
-
-        return field;
-    };
-
-    var field = make_bases();
-
-
-    var datumToSelector = function(d, keys, vals) {
-        var s = '';
-        _.forEach(_.range(keys.length), function(i) {
-            s += '.' + keys[i] + '-' + vals[i];
+            return parseInt(d.iy);
         })
-        console.log('d2s', s);
-        return s;
-    };
+    );
 
-    var ball_mouseover = function(d) {
+    var all_ixs = _.uniq(
+        _.map(data, function(d) {
+            return d.ix;
+        })
+    );
 
-        var vals = _.map(all_keys, function(k) {
-            console.log(k, d, d[k], hs[k](+d[k]));
-            return parseInt(hs[k](parseFloat(d[k])));
+    console.log('all_iys', all_iys);
+    console.log('min', _.min(all_iys));
+    console.log('min', _.max(all_iys));
+    console.log('ynav dom', [_.min(all_iys), _.max(all_iys)]);
+    console.log('xd', xd);
+    console.log('yd', yd);
+
+    ynavboxes.domain(all_iys);
+    x.domain(xd);
+    ynav.domain(yd);
+
+    var make_line = function(iy) {
+        var t = [];
+        _.forEach(data, function (d) {
+            if (d.iy === iy) {
+                var x = d.x;
+                t.push({'x': d.x, 'y': d.v});
+            }
         });
 
-        for (var i=0; i<all_keys.length; i++) {
-            for (var j=i+1; j<all_keys.length; j++) {
-                var ki = all_keys[i];
-                var kj = all_keys[j];
-                var ks = [ki, kj];
-                var vs = [vals[i], vals[j]];
-
-                var s = '.navrect' + datumToSelector(d, ks, vs);
-
-                console.log('navrect select', s, ks, vs);
-                d3.selectAll(s)
-                    .transition()
-                    .duration(batted_ball_duration)
-                    .style('fill', 'steelblue')
-                    .style('opacity', 1)
-                ;
-
-            };
-        };
-
-    };
-
-    var ball_mouseout = function(d) {
-
-        var vals = _.map(all_keys, function(k) {
-            console.log(k, d, d[k], hs[k](+d[k]));
-            return parseInt(hs[k](parseFloat(d[k])));
-        });
-
-        for (var i=0; i<all_keys.length; i++) {
-            for (var j=i+1; j<all_keys.length; j++) {
-                var ki = all_keys[i];
-                var kj = all_keys[j];
-                var ks = [ki, kj];
-                var vs = [vals[i], vals[j]];
-
-                var s = '.navrect' + datumToSelector(d, ks, vs);
-
-                console.log('navrect select', s, ks, vs);
-
-                d3.selectAll(s)
-                    .transition()
-                    .duration(batted_ball_duration)
-                    .style('fill', 'white')
-                    .style('opacity', 0.2)
-                ;
-
-            };
-        };
-
-
-    };
-
-    var make_batted_balls = function(g) {
-        var batted_balls = g.append('g')
-            .attr('transform', function() {
-                var sx = field_scale(127/2);
-                var sy = field_scale(127);
-                return 'translate(' + sx + ',' + sy + ')';
+        return svg.append('path')
+            .attr('d', line(t))
+            .attr("stroke", function () {
+                return 'black';
             })
-            .attr('id', 'battedballs');
-
-        batted_balls.selectAll('.battedball')
-            .data(data)
-            .enter()
-            .append('circle')
-            .attr('opacity', resting_opacity)
-            .attr('cx', function(d, i) {
-              //  console.log('x', d, d.Carry*Math.cos(d.HExitAngleInRadians)*feetPerPixel);
-                return d.Carry*Math.sin(d.HExitAngleInRadians)*feetPerPixel;
-            })
-            .attr('cy', function(d, i) {
-            //    console.log('y', d, -d.Carry*Math.sin(d.HExitAngleInRadians)*feetPerPixel);
-                return -d.Carry*Math.cos(d.HExitAngleInRadians)*feetPerPixel;
-            })
-            .attr('r', 2)
-            .attr('class', function(d, i) {
-                //console.log('hist', d, h(d.Carry), parseInt(h(d.Carry)));
-                var s = 'battedball ';
-                _.forIn(number_of_bins, function(v, k) {
-                    s += ' ' + k + '-' + parseInt(hs[k](d[k]));
-                });
-                return s ;
-            })
-            .on('mouseover', function(d) {
-                ball_mouseover(d);
-                $(this).attr('r', 10).attr('opacity', 1);
-            })
-            .on('mouseout', function(d) {
-                ball_mouseout(d);
-                $(this).attr('r', 2).attr('opacity', resting_opacity);
-
-            })
-
+            .attr("stroke-width", 2)
+            .style('opacity', 0.1)
+            .attr("fill", "none")
         ;
+
+    }
+
+    var make_lines = function() {
+        _.forEach(all_iys, function(iy) {
+            lines[iy] = make_line(iy);
+        })
     };
 
+    svg.append("g")
+        .attr("class", "axis")
+        .attr('transform', 'translate(0,' + height + ')')
+        .call(xaxis)
+        .append("text")
+        .style("text-anchor", "middle")
+        .text('Exit Speed [mph]')
+        .attr('x', 20)
+        .attr('y', 20)
+    ;
 
-    var nav_rect_mouseover = function(kx, idx_x, ky, idx_y) {
-        console.log('nav_rect mouseover!', kx, idx_x, ky, idx_y);
+    svg.append("g")
+        .attr("class", "axis")
+        .attr('transform', 'translate(0,' + 0 + ')')
+        .call(yaxis)
+        .append("text")
+        .style("text-anchor", "middle")
+        .text('Batting Avg.')
+        .attr('x', -50)
+        .attr('y', 20)
+        .attr('transform', 'rotate(-90)')
+    ;
 
-        var selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + idx_x + '';
-        selector_string += '.' + ky + '-' + idx_y + '';
+    svg.append("g")
+        .attr("class", "axis")
+        .attr('transform', 'translate(' + -100 + ',' + 0 + ')')
+        .call(ynavaxis)
+        .append("text")
+        .style("text-anchor", "middle")
+        .attr("x", -50)
+        .text('V. Launch Angle [deg]')
+    ;
 
-        console.log('selector_string', selector_string);
+    var col_gradient = ['#f4a582', '#b2182b',  'black', '#2166ac', '#d1e5f0'];
+    var col_gradient_mid = parseInt(col_gradient.length/2);
+    var opacity_scale = d3.scale.ordinal()
+        .range([1, 0.5])
+        .domain(_.range(col_gradient_mid));
 
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 10)
-            .style('opacity', 1)
-            .style('fill', function(d) {
-                console.log(d);
-                return d.slg > 0 ? 'steelblue' : 'red';
-            })
+    var rect_mouse_in = function(d) {
+        console.log('mouse in', d, d-col_gradient.length/2);
+        _.forEach(col_gradient, function(e, i) {
+
+            var k = Math.abs(i-col_gradient_mid);
+            lines[d+i-col_gradient_mid]
+            .attr('stroke-width', 5)
+            .style('opacity', opacity_scale(k))
+            .attr('stroke', e);
+
+            nav_rects[d+i-col_gradient_mid]
+                .attr('stroke-width', 1)
+                .style('opacity', opacity_scale(k))
+                .attr('fill', e);
+
+        });
+    };
+
+    var rect_mouse_out = function(d) {
+        console.log('mouse out', d);
+        _.forEach(col_gradient, function(e, i) {
+            var k = Math.abs(i-col_gradient_mid);
+            lines[d+i-col_gradient_mid]
+                .attr('stroke-width', 1)
+                .style('opacity', 0.2)
+                .attr('stroke', 'black');
+
+            nav_rects[d+i-col_gradient_mid]
+                .attr('stroke-width', 1)
+                .style('opacity', 0.3)
+                .attr('fill', 'black');
+
+        });
+
+    };
+
+    var nav_rects = {};
+    var make_nav = function () {
+        var dy = height/all_iys.length;
+        _.forEach(all_iys, function(iy) {
+            nav_rects[iy] = svg.append('rect')
+                .attr('width', 52)
+                .attr('height', dy)
+                .attr('x', -97)
+                .attr('y', function() {
+                    return ynavboxes(iy);
+                })
+                .attr('id', 'rect-' + iy.toString())
+                .attr('fill', 'black')
+                .style('opacity', 0.3)
+                .attr('cursor', 'pointer')
+                .on('mouseover', function() {
+                    rect_mouse_in(iy);
+                })
+                .on('mouseout', function() {
+                    rect_mouse_out(iy);
+                })
             ;
-
-        selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + (idx_x-1).toString() + '';
-        selector_string += '.' + ky + '-' + (idx_y-1).toString() + '';
-
-        console.log('selector_string', selector_string);
-
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 6)
-            .style('opacity', 0.8)
-            .style('fill', function(d) {
-                console.log(d);
-                return d.slg > 0 ? 'steelblue' : 'red';
-            })
-        ;
-
-        selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + (idx_x+1).toString() + '';
-        selector_string += '.' + ky + '-' + (idx_y+1).toString() + '';
-
-        console.log('selector_string', selector_string);
-
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 6)
-            .style('opacity', 0.8)
-            .style('fill', function(d) {
-                console.log(d);
-                return d.slg > 0 ? 'steelblue' : 'red';
-            })
-        ;
-
-    };
-
-    var nav_rect_mouseout = function(kx, idx_x, ky, idx_y) {
-        console.log('nav_rect mouseout!');
-
-        var selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + idx_x + '';
-        selector_string += '.' + ky + '-' + idx_y + '';
-
-        console.log('selector_string', selector_string);
-
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 2)
-            .style('opacity', 0.2)
-            .style('fill', function(d) {
-                return 'grey';
-            })
-        ;
-
-        selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + (idx_x-1).toString() + '';
-        selector_string += '.' + ky + '-' + (idx_y-1).toString() + '';
-
-        console.log('selector_string', selector_string);
-
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 2)
-            .style('opacity', 0.2)
-            .style('fill', function(d) {
-                return 'grey';
-            })
-        ;
-
-        selector_string = '.battedball';
-        selector_string += '.' + kx + '-' + (idx_x+1).toString() + '';
-        selector_string += '.' + ky + '-' + (idx_y+1).toString() + '';
-
-        console.log('selector_string', selector_string);
-
-        d3.selectAll(selector_string)
-            .transition()
-            .duration(batted_ball_duration)
-            .attr('r', 2)
-            .style('opacity', 0.2)
-            .style('fill', function(d) {
-                return 'grey';
-            })
-        ;
-
-    };
-
-
-    var make_nav_square = function(nav_matrix, kx, ky) {
-
-        console.log('make_nav_square');
-        var idx_array = [];
-        console.log(kx, _.range(number_of_bins[kx]));
-
-        _.forEach(_.range(number_of_bins[kx]), function (idx_x) {
-            _.forEach(_.range(number_of_bins[ky]), function(idx_y) {
-
-                nav_matrix.append('rect')
-                    .attr('class', function() {
-                        var s = 'navrect ';
-                        s += kx + '-' + idx_x + ' ';
-                        s += ky + '-' + idx_y + ' ' ;
-                        return s;
-                    })
-                    .style('fill', 'white')
-                    .style('stroke', 'black')
-                    .attr('width', nav_square_sz)
-                    .attr('height', nav_square_sz)
-                    .attr('x', function() {
-                        return idx_x * (nav_square_sz + nav_square_buffer);
-                    })
-                    .attr('y', function() {
-                        return idx_y * (nav_square_sz + nav_square_buffer);
-                    })
-                    .attr('opacity', 0.2)
-                    .on('mouseover', function() {
-                        console.log('nav_square', kx, idx_x, ky, idx_y);
-                        nav_rect_mouseover(kx, idx_x, ky, idx_y);
-                        $(this).attr('fill', 'steelblue').attr('opacity', 1);
-                    })
-                    .on('mouseout', function() {
-                        nav_rect_mouseout(kx, idx_x, ky, idx_y);
-                        $(this).attr('fill', 'white').attr('opacity', 0.2);
-                    })
-                ;
-
-                nav_matrix.append('g')
-                    .attr('transform', 'translate(25, -5)')
-                    .append('text')
-                    .attr('class', 'nav_label nav-label-y')
-                    .attr('font-size', 10)
-                    .attr('text-anchor', 'middle')
-                    .text(kx);
-
-                nav_matrix.append('g')
-                    .attr('transform', 'translate(-5, 25) rotate(-90)')
-                    .append('text')
-                    .attr('class', 'nav_label nav-label-y')
-                    .attr('font-size', 10)
-                    .attr('text-anchor', 'middle')
-                    .text(ky);
-
-
-            });
         });
-
-
     };
 
-    var make_nav_matrix = function(sx, sy) {
+    make_lines();
+    make_nav();
 
-        var nav_matrix = svg.append('g')
-            .attr('transform', 'translate(' + sx +',' + sy + ')');
-        return nav_matrix;
-
-
-    }
-
-    make_batted_balls(field);
-
-
-    var nv = {};
-    var nav_x_initial = 900;
-    var nav_y_initial = 20;
-
-
-    var kx
-    var ky;
-
-    for (var i=0; i<all_keys.length; i++ ){
-        for (var j=i+1; j<all_keys.length; j++) {
-            kx = all_keys[i];
-            ky = all_keys[j];
-            var k = kx + '_' + ky;
-            var dx = i*(nav_square_sz+nav_square_buffer)*number_of_bins[kx];
-            var dy = j*(nav_square_sz+nav_square_buffer)*number_of_bins[ky];
-
-            nv[k] = make_nav_matrix(nav_x_initial + dx, nav_y_initial + dy);
-            make_nav_square(nv[k], kx, ky);
-
-        }
-    }
-
-    _.forEach(all_keys, function(k) {
-
-    })
+    svg.append('text')
+        .attr('x', -150)
+        .attr('y', -57)
+        .text('mouseover here')
+        .attr('font-weight', 'bold')
+        .attr('transform', 'rotate(-90)')
 
 });
