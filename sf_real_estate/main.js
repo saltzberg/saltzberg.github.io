@@ -12,7 +12,7 @@ var svg = d3.select("body").append("svg")
     .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-
+//these define the placement of the axes.
 var x = d3.scale.linear()
     .range([0, width]);
 var y = d3.scale.linear()
@@ -56,7 +56,7 @@ d3.json("sf_housing.json", function(error, data) {
     var lines = {}
     var xd = [9999, -9999];
     var yd = [9999, -9999];
-
+    // iy is a unique identifier along the axis
     var all_iys = _.uniq(
         _.map(data, function(d) {
             d.x = parseFloat(d.x);
@@ -79,7 +79,7 @@ d3.json("sf_housing.json", function(error, data) {
             return parseInt(d.iy);
         })
     );
-
+    // ix is a unique identifier for each line
     var all_ixs = _.uniq(
         _.map(data, function(d) {
             return d.ix;
@@ -117,7 +117,7 @@ d3.json("sf_housing.json", function(error, data) {
         ;
 
     }
-
+    //make all of the lines on the plot
     var make_lines = function() {
         _.forEach(all_iys, function(iy) {
             lines[iy] = make_line(iy);
@@ -130,7 +130,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(xaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Exit Speed [mph]')
+        .text('Housing Percentile')
         .attr('x', 20)
         .attr('y', 20)
     ;
@@ -141,7 +141,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(yaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Batting Avg.')
+        .text('Price (1,000$)')
         .attr('x', -50)
         .attr('y', 20)
         .attr('transform', 'rotate(-90)')
@@ -154,7 +154,7 @@ d3.json("sf_housing.json", function(error, data) {
         .append("text")
         .style("text-anchor", "middle")
         .attr("x", -50)
-        .text('V. Launch Angle [deg]')
+        .text('Year')
     ;
 
     var col_gradient = ['#f4a582', '#b2182b',  'black', '#2166ac', '#d1e5f0'];
@@ -198,7 +198,7 @@ d3.json("sf_housing.json", function(error, data) {
         });
 
     };
-
+    
     var nav_rects = {};
     var make_nav = function () {
         var dy = height/all_iys.length;
