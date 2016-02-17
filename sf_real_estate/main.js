@@ -130,7 +130,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(xaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Housing Percentile')
+        .text('Housing Price Percentile')
         .attr('x', 20)
         .attr('y', 20)
     ;
@@ -141,7 +141,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(yaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Price (1,000$)')
+        .text('Price / Price(2008)')
         .attr('x', -50)
         .attr('y', 20)
         .attr('transform', 'rotate(-90)')
