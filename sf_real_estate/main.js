@@ -17,7 +17,7 @@ var x = d3.scale.linear()
     .range([0, width]);
 var y = d3.scale.linear()
     .range([height, 0])
-    .domain([0,10]);
+    .domain([0.5,2.5]);
 
 var ynav = d3.scale.linear()
     .rangeRound([height, 0])
@@ -130,7 +130,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(xaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Housing Percentile')
+        .text('Housing Price Percentile')
         .attr('x', 20)
         .attr('y', 20)
     ;
@@ -141,7 +141,7 @@ d3.json("sf_housing.json", function(error, data) {
         .call(yaxis)
         .append("text")
         .style("text-anchor", "middle")
-        .text('Price (1,000$)')
+        .text('Price / Price(2008)')
         .attr('x', -50)
         .attr('y', 20)
         .attr('transform', 'rotate(-90)')
@@ -157,7 +157,7 @@ d3.json("sf_housing.json", function(error, data) {
         .text('Year')
     ;
 
-    var col_gradient = ['#f4a582', 'black', '#d1e5f0'];
+    var col_gradient = ['#f4a582', '#b2182b',  'black', '#2166ac', '#d1e5f0'];
     var col_gradient_mid = parseInt(col_gradient.length/2);
     var opacity_scale = d3.scale.ordinal()
         .range([1, 0.5])
