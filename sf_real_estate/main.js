@@ -17,7 +17,7 @@ var x = d3.scale.linear()
     .range([0, width]);
 var y = d3.scale.linear()
     .range([height, 0])
-    .domain([0,5000]);
+    .domain([0,10]);
 
 var ynav = d3.scale.linear()
     .rangeRound([height, 0])
