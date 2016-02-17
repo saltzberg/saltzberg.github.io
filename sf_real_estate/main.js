@@ -50,7 +50,7 @@ var line = d3.svg.line()
     })
     .interpolate(interpolate_type);
 
-d3.json("pobguy_v2.json", function(error, data) {
+d3.json("sf_housing.json", function(error, data) {
     console.log(data);
 
     var lines = {}
