@@ -157,7 +157,7 @@ d3.json("sf_housing.json", function(error, data) {
         .text('Year')
     ;
 
-    var col_gradient = ['#b2182b',  'black', '#2166ac'];
+    var col_gradient = ['#f4a582', 'black', '#d1e5f0'];
     var col_gradient_mid = parseInt(col_gradient.length/2);
     var opacity_scale = d3.scale.ordinal()
         .range([1, 0.5])
