@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<style>
+
+canvas {
+    position: absolute;
+}
+
+</style>
+
+<style>
+#container { position: relative; }
+    .canvas { position: absolute; top: 0; left: 0;}
+
+.button {
+  position: absolute;
+  border: none;
+  color: white;
+  padding: 15px 32px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+}
+
+.clearbutton{
+    background-color: #4C4C4C; /* Grat */
+    top: 400px;
+    left: 120px;
+}
+.submitbutton{
+    background-color: #4CDDAF; /* Grat */
+    top: 400px;
+    left: 350px;
+}
+
+
+</style>
+
+<div id="container">
+    <canvas class="canvas" id="grid-canvas" width="610" height="360"></canvas>
+    <canvas class="canvas" id="draw-canvas" width="610" height="330"></canvas>
+    <canvas class="canvas" id="set-canvas" width="610" height="330"></canvas>
+</div>
+
+</head>
+
+<body>
+
+<button class="button clearbutton" id="clear" top='450px' left='150px'>Clear</button>
+<button class="button submitbutton" id="submit" top='450px' left='500px'>Submit</button>
+
+
+<script type="text/javascript" charset="utf-8" src=grid.js></script>
+
+<script>
+
+
+var setCanvas = document.getElementById('set-canvas');
+var drawCanvas = document.getElementById('draw-canvas');
+
+//var rect = canvas.getBoundingClientRect();
+var drawctx = drawCanvas.getContext('2d');
+drawctx.fillStyle = 'blue';
+drawctx.font = 'bold 18px verdana';
+var setctx = setCanvas.getContext('2d');
+setctx.fillStyle = 'red';
+var mainctx = canvas.getContext('2d');
+mainctx.fillStyle = 'black'
+
+var pf_array=new Array(18).fill(-1);
+
+function drawDot(canvas, x, y) {
+    //ctx.clearRect(0,0,canvas.width,canvas.height);
+    const rect = canvas.getBoundingClientRect();
+    ctx.beginPath();
+    ctx.arc(x,y,6,2*Math.PI,false);
+    ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#003300';
+    ctx.stroke()
+}
+
+function drawIntDot(canvas, x, y) {
+    var ctx = canvas.getContext('2d');
+    ctx.beginPath();
+    ctx.arc(x*30+90,(10-y)*30,6,2*Math.PI,false);
+    //ctx.fillStyle = 'green';
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#003300';
+    ctx.stroke()
+}
+
+function getAbsolutePosition(cv, x, y) {
+    const rect = cv.getBoundingClientRect();
+    scaleX = cv.width / rect.width;    // relationship bitmap vs. element for X
+    scaleY = cv.height / rect.height;  // relationship bitmap vs. element for Y
+  return {
+    x: (x - rect.left) * scaleX,   // scale mouse coordinates after they have
+    y: (y - rect.top) * scaleY     // been adjusted to be relative to element
+  }   
+}
+
+function  getMousePos(cv, evt) {
+    pos = getAbsolutePosition(cv, evt.clientX, evt.clientY)
+  return {
+    x: pos.x,   // scale mouse coordinates after they have
+    y: pos.y     // been adjusted to be relative to element
+  }
+}
+
+
+/**
+ * On mousemove:
+ * Clear top left of main canvas
+ * print the X-integer and Y coordinate on top left
+ * top left of the main canvas
+ */
+setCanvas.addEventListener('mousemove', function(e) {
+
+    var mousePos = getMousePos(setCanvas, e);
+    var x_int = (Math.round((mousePos.x -90)/30)*10)/10;
+    if (x_int < -2) x_int = -2;
+    if (x_int > 16) x_int = 16;
+
+    drawctx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+    var y_val = (Math.round((10-mousePos.y/30)*10)/10);
+    if (y_val < 0) y_val = 0;
+    drawctx.beginPath();
+    drawctx.arc(x_int*30+90,(10-y_val)*30,5,2*Math.PI,false);
+    drawctx.fill();
+    drawctx.lineWidth = 1;
+    drawctx.strokeStyle = '#003300';
+    drawctx.stroke();
+    var str1 = 'Pf : ' + x_int;
+    var str2 = 'p : ' + y_val;
+
+    var abspos1 = getAbsolutePosition(drawCanvas, 5, 25);
+    var abspos2 = getAbsolutePosition(canvas, 5, 50);
+    if (y_val < 8) {
+        drawctx.fillText(str1, x_int*30+90-30, (10-y_val)*30-40);
+        drawctx.fillText(str2, x_int*30+90-30, (10-y_val)*30-20);
+    }
+    else {
+        drawctx.fillText(str1, x_int*30+90-30, (10-y_val)*30+30);
+        drawctx.fillText(str2, x_int*30+90-30, (10-y_val)*30+50);
+    }
+    }, false);
+
+setCanvas.addEventListener('mouseout', function(evt) {
+    drawctx.clearRect(0,0,drawCanvas.width, drawCanvas.height);
+    }, false);
+
+/**
+ * On mousedown:
+ * 1) clear the current canvas
+ * 2) place a dot in the middle of the canvas on the Y-coordinate
+ * 3) log the Y-coordinate
+ */
+setCanvas.addEventListener('mousedown', function(evt) {   
+    //ctx.clearRect(canvas.left, canvas.top, canvas.left+ canvas.width, canvas.top+canvas.height);
+    //ctx.clearRect(0, 0, drawCanvas.width, drawCanvas.top);
+    var mousePos = getMousePos(setCanvas, evt);
+    var x_int = (Math.round((mousePos.x - 90)/30)*10)/10;
+    if (x_int < -2) x_int = -2;
+    if (x_int > 16) x_int = 16;
+    setctx.clearRect(x_int*30 + 75, 0, 30, setCanvas.height);
+    var y_val = (Math.round((10-mousePos.y/30)*1000)/1000);
+    if (y_val < 0) y_val = 0;
+    pf_array[x_int+2] = y_val;
+    drawIntDot(setCanvas, x_int, y_val);}, false);
+
+    document.getElementById('submit')
+    
+
+    // if all the pf_array values are >0, then we can open the submit button
+
+
+document.getElementById('clear').addEventListener('click',
+    function() {
+        setctx.clearRect(0,0,setCanvas.width, setCanvas.height);
+    }, false);
+/*
+document.getElementById('submit').addEventListener('click',
+    function() {
+        document.write("2_"+pf_array[4]+"<br>");
+    }, false);
+*/
+
+</script>
+
+</body>
+
+</html>
